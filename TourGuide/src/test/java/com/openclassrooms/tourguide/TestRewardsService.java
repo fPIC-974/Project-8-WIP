@@ -43,7 +43,7 @@ public class TestRewardsService {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		Attraction attraction = gpsUtil.getAttractions().get(0);
-		assertFalse(rewardsService.isWithinAttractionProximity(attraction, attraction));
+		assertTrue(rewardsService.isWithinAttractionProximity(attraction, attraction));
 	}
 
 	@Test
