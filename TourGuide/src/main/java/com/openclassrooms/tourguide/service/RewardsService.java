@@ -43,22 +43,20 @@ public class RewardsService {
 		List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
-		userLocations.forEach(visitedLocation -> {
+		/*userLocations.forEach(visitedLocation -> {
 			attractions.forEach(attraction -> {
 				if(user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
 					if(nearAttraction(visitedLocation, attraction)) {
 						CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
 							UserReward userReward = new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user));
 							return userReward;
-						}, executorService).thenAcceptAsync(reward -> {
-							user.addUserReward(reward);
-						});
+						}, executorService).thenAccept(reward -> user.addUserReward(reward));
 					}
 				}
 			});
-		});
+		});*/
 
-		/*for(VisitedLocation visitedLocation : userLocations) {
+		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
 				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
 					if(nearAttraction(visitedLocation, attraction)) {
@@ -66,7 +64,7 @@ public class RewardsService {
 					}
 				}
 			}
-		}*/
+		}
 	}
 	
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
