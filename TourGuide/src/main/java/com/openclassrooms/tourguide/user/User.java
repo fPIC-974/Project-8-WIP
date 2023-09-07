@@ -4,11 +4,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import com.openclassrooms.tourguide.tracker.Tracker;
 import gpsUtil.location.VisitedLocation;
+import org.apache.commons.lang3.time.StopWatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tripPricer.Provider;
 
 public class User {
+	private Logger logger = LoggerFactory.getLogger(User.class);
 	private final UUID userId;
 	private final String userName;
 	private String phoneNumber;
