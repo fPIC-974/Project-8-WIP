@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.Disabled;
@@ -59,9 +60,11 @@ public class TestPerformance {
 
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		for (User user : allUsers) {
+		/*for (User user : allUsers) {
 			tourGuideService.trackUserLocation(user);
-		}
+		}*/
+		allUsers.stream().parallel().forEach(tourGuideService::trackUserLocation);
+
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();
 
@@ -87,7 +90,9 @@ public class TestPerformance {
 		allUsers = tourGuideService.getAllUsers();
 		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-		allUsers.forEach(u -> rewardsService.calculateRewards(u));
+//		allUsers.forEach(u -> rewardsService.calculateRewards(u));
+
+		allUsers.stream().parallel().forEach(rewardsService::calculateRewards);
 
 		for (User user : allUsers) {
 			assertTrue(user.getUserRewards().size() > 0);
