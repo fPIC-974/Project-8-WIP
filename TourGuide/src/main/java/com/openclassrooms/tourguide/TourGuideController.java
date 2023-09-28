@@ -1,8 +1,13 @@
 package com.openclassrooms.tourguide;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import com.openclassrooms.tourguide.service.RewardsService;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +27,9 @@ public class TourGuideController {
 
 	@Autowired
 	TourGuideService tourGuideService;
+
+    @Autowired
+    RewardsService rewardsService;
 	
     @RequestMapping("/")
     public String index() {
@@ -43,9 +51,26 @@ public class TourGuideController {
         // The reward points for visiting each Attraction.
         //    Note: Attraction reward points can be gathered from RewardsCentral
     @RequestMapping("/getNearbyAttractions") 
-    public List<Attraction> getNearbyAttractions(@RequestParam String userName) throws ExecutionException, InterruptedException {
+    public String getNearbyAttractions(@RequestParam String userName) throws ExecutionException, InterruptedException {
     	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    	return tourGuideService.getNearByAttractions(visitedLocation);
+
+        List<Attraction> attractionList = tourGuideService.getNearByAttractions(visitedLocation);
+        List<JSONObject> jsonAttractionList = new ArrayList<>();
+
+        attractionList.parallelStream().forEach(a -> {
+            Map<String, String> attraction = new HashMap<>();
+            attraction.put("attraction", a.attractionName);
+            attraction.put("aLatitude", String.valueOf(a.latitude));
+            attraction.put("aLongitude", String.valueOf(a.longitude));
+            attraction.put("uLatitude", String.valueOf(visitedLocation.location.latitude));
+            attraction.put("uLongitude", String.valueOf(visitedLocation.location.longitude));
+            attraction.put("distance", String.valueOf(rewardsService.getDistance(visitedLocation.location, a)));
+            attraction.put("points", String.valueOf(rewardsService.getRewardPoints(a, getUser(userName))));
+
+            jsonAttractionList.add(new JSONObject(attraction));
+        });
+
+        return jsonAttractionList.toString();
     }
     
     @RequestMapping("/getRewards") 
