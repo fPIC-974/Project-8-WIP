@@ -47,7 +47,7 @@ public class RewardsService {
         List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
         List<Attraction> attractions = gpsUtil.getAttractions();
 
-        ExecutorService exService = Executors.newFixedThreadPool(5);
+        ExecutorService exService = Executors.newFixedThreadPool(18);
         userLocations.forEach(visitedLocation -> {
             List<CompletableFuture<Void>> futuresLocation = new ArrayList<>();
             attractions.forEach(attraction -> {
