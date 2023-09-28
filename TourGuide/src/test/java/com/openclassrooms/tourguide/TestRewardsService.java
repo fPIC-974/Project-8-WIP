@@ -47,7 +47,7 @@ public class TestRewardsService {
 	}
 
 	@Test
-	public void nearAllAttractions() {
+	public void nearAllAttractions() throws InterruptedException {
 		GpsUtil gpsUtil = new GpsUtil();
 		RewardsService rewardsService = new RewardsService(gpsUtil, new RewardCentral());
 		rewardsService.setProximityBuffer(Integer.MAX_VALUE);
