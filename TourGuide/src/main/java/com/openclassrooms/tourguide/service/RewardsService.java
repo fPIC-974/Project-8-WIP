@@ -30,8 +30,6 @@ public class RewardsService {
     private final GpsUtil gpsUtil;
     private final RewardCentral rewardsCentral;
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(500);
-
     public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
         this.gpsUtil = gpsUtil;
         this.rewardsCentral = rewardCentral;
@@ -49,32 +47,27 @@ public class RewardsService {
         List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
         List<Attraction> attractions = gpsUtil.getAttractions();
 
+        ExecutorService exService = Executors.newFixedThreadPool(5);
         userLocations.forEach(visitedLocation -> {
             List<CompletableFuture<Void>> futuresLocation = new ArrayList<>();
             attractions.forEach(attraction -> {
                 if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
                     CompletableFuture<Void> futureAttraction = CompletableFuture.runAsync(() -> {
                         if (nearAttraction(visitedLocation, attraction)) {
-                            CompletableFuture<UserReward> userReward = CompletableFuture.supplyAsync(() -> new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)), executorService);
+                            CompletableFuture<UserReward> userReward = CompletableFuture.supplyAsync(() -> {
+                                return getRewardPoints(attraction, user);
+                            }, exService).thenApplyAsync(points -> {
+                                return new UserReward(visitedLocation, attraction, points);
+                            });
                             CompletableFuture.completedFuture(userReward).thenRun(() -> user.addUserReward(userReward.join()));
                         }
-                    }, executorService);
+                    }, exService);
                     futuresLocation.add(futureAttraction);
                 }
             });
             CompletableFuture.allOf(futuresLocation.toArray(new CompletableFuture[0])).join();
         });
-
-        // ORIG
-		/*for(VisitedLocation visitedLocation : userLocations) {
-			for(Attraction attraction : attractions) {
-				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-					if(nearAttraction(visitedLocation, attraction)) {
-						user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
-					}
-				}
-			}
-		}*/
+        exService.shutdown();
     }
 
     public boolean isWithinAttractionProximity(Attraction attraction, Location location) {

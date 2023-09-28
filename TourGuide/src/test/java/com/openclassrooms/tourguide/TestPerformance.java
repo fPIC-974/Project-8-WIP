@@ -55,15 +55,12 @@ public class TestPerformance {
 		InternalTestHelper.setInternalUserNumber(100);
 		TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
 
-		List<User> allUsers = new ArrayList<>();
-		allUsers = tourGuideService.getAllUsers();
+		List<User> allUsers = tourGuideService.getAllUsers();
 
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		/*for (User user : allUsers) {
-			tourGuideService.trackUserLocation(user);
-		}*/
-		allUsers.stream().parallel().forEach(tourGuideService::trackUserLocation);
+
+		allUsers.parallelStream().forEach(tourGuideService::trackUserLocation);
 
 		stopWatch.stop();
 		tourGuideService.tracker.stopTracking();
@@ -80,19 +77,19 @@ public class TestPerformance {
 
 		// Users should be incremented up to 100,000, and test finishes within 20
 		// minutes
-		InternalTestHelper.setInternalUserNumber(10);
+		InternalTestHelper.setInternalUserNumber(100);
+
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
+
 		TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
 
 		Attraction attraction = gpsUtil.getAttractions().get(0);
-		List<User> allUsers = new ArrayList<>();
-		allUsers = tourGuideService.getAllUsers();
-		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-//		allUsers.forEach(u -> rewardsService.calculateRewards(u));
+		List<User> allUsers = tourGuideService.getAllUsers();
+		allUsers.parallelStream().forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-		allUsers.stream().parallel().forEach(rewardsService::calculateRewards);
+		allUsers.parallelStream().forEach(rewardsService::calculateRewards);
 
 		for (User user : allUsers) {
 			assertTrue(user.getUserRewards().size() > 0);
