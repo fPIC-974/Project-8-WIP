@@ -42,7 +42,7 @@ jobs:
         ls -l staging
     - uses: actions/upload-artifact@v3
       with:
-        name: Package
+        name: tourguide-0.0.1-SNAPSHOT.jar
         path: staging
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
