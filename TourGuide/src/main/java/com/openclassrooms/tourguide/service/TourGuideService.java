@@ -35,6 +35,8 @@ public class TourGuideService {
     private final TripPricer tripPricer = new TripPricer();
     public final Tracker tracker;
     boolean testMode = true;
+    private ExecutorService executorService = Executors.newFixedThreadPool(25);
+    private List<CompletableFuture<?>> completableFutures = new ArrayList<CompletableFuture<?>>();
 
     public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
         this.gpsUtil = gpsUtil;
@@ -86,16 +88,26 @@ public class TourGuideService {
     }
 
     public CompletableFuture<VisitedLocation> trackUserLocation(User user) {
-        ExecutorService exService = Executors.newFixedThreadPool(25);
         CompletableFuture<VisitedLocation> future = CompletableFuture.supplyAsync(() -> {
             VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
             user.addToVisitedLocations(visitedLocation);
+            rewardsService.calculateRewards(user);
 
             return visitedLocation;
-        }, exService);
-        CompletableFuture.completedFuture(future).thenRun(() -> rewardsService.calculateRewards(user));
-        exService.shutdown();
+        }, executorService);
+        completableFutures.add(future);
         return future;
+    }
+
+    // Check if all threads in ExecutorService pool are done
+    public boolean isExecutorEmpty() {
+        boolean allDone = true;
+
+        for (CompletableFuture<?> completableFuture: completableFutures) {
+            allDone &= completableFuture.isDone();
+        }
+
+        return allDone;
     }
 
     public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {

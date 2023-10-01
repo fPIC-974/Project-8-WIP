@@ -29,6 +29,8 @@ public class RewardsService {
     private int attractionProximityRange = 200;
     private final GpsUtil gpsUtil;
     private final RewardCentral rewardsCentral;
+    private ExecutorService executorService = Executors.newFixedThreadPool(150);
+    List<CompletableFuture<?>> completableFutures = new ArrayList<CompletableFuture<?>>();
 
     public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
         this.gpsUtil = gpsUtil;
@@ -44,30 +46,41 @@ public class RewardsService {
     }
 
     public void calculateRewards(User user) {
-        List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
-        List<Attraction> attractions = gpsUtil.getAttractions();
+        CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
+            List<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
+            List<Attraction> attractions = gpsUtil.getAttractions();
 
-        ExecutorService exService = Executors.newFixedThreadPool(18);
-        userLocations.forEach(visitedLocation -> {
-            List<CompletableFuture<Void>> futuresLocation = new ArrayList<>();
-            attractions.forEach(attraction -> {
-                if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
-                    CompletableFuture<Void> futureAttraction = CompletableFuture.runAsync(() -> {
+            userLocations.forEach(visitedLocation -> {
+                ExecutorService localExecutor = Executors.newFixedThreadPool(15);
+
+                attractions.forEach(attraction -> {
+                    if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName))) {
                         if (nearAttraction(visitedLocation, attraction)) {
                             CompletableFuture<UserReward> userReward = CompletableFuture.supplyAsync(() -> {
                                 return getRewardPoints(attraction, user);
-                            }, exService).thenApplyAsync(points -> {
+                            }, localExecutor).thenApplyAsync(points -> {
                                 return new UserReward(visitedLocation, attraction, points);
                             });
                             CompletableFuture.completedFuture(userReward).thenRun(() -> user.addUserReward(userReward.join()));
                         }
-                    }, exService);
-                    futuresLocation.add(futureAttraction);
-                }
+                    }
+                });
+                localExecutor.shutdown();
             });
-            CompletableFuture.allOf(futuresLocation.toArray(new CompletableFuture[0])).join();
-        });
-        exService.shutdown();
+        }, executorService);
+        completableFutures.add(completableFuture);
+    }
+
+    // Check if all threads in ExecutorService pool are done
+    public boolean isExecutorEmpty() {
+        List<CompletableFuture<?>> threadSafeList = new CopyOnWriteArrayList<>(completableFutures);
+        boolean allDone = true;
+
+        for (CompletableFuture<?> completableFuture: threadSafeList) {
+            allDone &= completableFuture.isDone();
+        }
+
+        return allDone;
     }
 
     public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
