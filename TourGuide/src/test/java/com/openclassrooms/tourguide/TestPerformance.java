@@ -87,9 +87,15 @@ public class TestPerformance {
 		Attraction attraction = gpsUtil.getAttractions().get(0);
 
 		List<User> allUsers = tourGuideService.getAllUsers();
-		allUsers.parallelStream().forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
+		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
-		allUsers.parallelStream().forEach(rewardsService::calculateRewards);
+		allUsers.forEach(rewardsService::calculateRewards);
+
+		while (true) {
+			if (rewardsService.isExecutorEmpty()) {
+				break;
+			}
+		}
 
 		for (User user : allUsers) {
 			assertTrue(user.getUserRewards().size() > 0);

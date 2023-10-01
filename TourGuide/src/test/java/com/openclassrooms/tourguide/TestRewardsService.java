@@ -32,9 +32,10 @@ public class TestRewardsService {
 		User user = new User(UUID.randomUUID(), "jon", "000", "jon@tourGuide.com");
 		Attraction attraction = gpsUtil.getAttractions().get(0);
 		user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
+
 		tourGuideService.trackUserLocation(user);
 
-		// Wait until all threads in ExecutorService are completed
+		// Wait until all threads in TourGuideService ExecutorService are completed
 		while (true) {
 			if (tourGuideService.isExecutorEmpty()) {
 				break;
@@ -42,6 +43,14 @@ public class TestRewardsService {
 		}
 
 		List<UserReward> userRewards = user.getUserRewards();
+
+		// Wait until all threads in RewardsService ExecutorService are completed
+		while (true) {
+			if (rewardsService.isExecutorEmpty()) {
+				break;
+			}
+		}
+
 		tourGuideService.tracker.stopTracking();
 		assertTrue(userRewards.size() == 1);
 	}
@@ -64,6 +73,14 @@ public class TestRewardsService {
 		TourGuideService tourGuideService = new TourGuideService(gpsUtil, rewardsService);
 
 		rewardsService.calculateRewards(tourGuideService.getAllUsers().get(0));
+
+		// Wait until all threads in ExecutorService are completed
+		while (true) {
+			if (rewardsService.isExecutorEmpty()) {
+				break;
+			}
+		}
+
 		List<UserReward> userRewards = tourGuideService.getUserRewards(tourGuideService.getAllUsers().get(0));
 		tourGuideService.tracker.stopTracking();
 
