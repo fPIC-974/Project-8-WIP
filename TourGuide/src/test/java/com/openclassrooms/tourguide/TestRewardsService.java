@@ -37,19 +37,19 @@ public class TestRewardsService {
 
 		// Wait until all threads in TourGuideService ExecutorService are completed
 		while (true) {
-			if (tourGuideService.isExecutorEmpty()) {
+			if (tourGuideService.isExecutorEmpty() && rewardsService.isExecutorEmpty()) {
 				break;
 			}
 		}
 
 		List<UserReward> userRewards = user.getUserRewards();
 
-		// Wait until all threads in RewardsService ExecutorService are completed
+		/*// Wait until all threads in RewardsService ExecutorService are completed
 		while (true) {
 			if (rewardsService.isExecutorEmpty()) {
 				break;
 			}
-		}
+		}*/
 
 		tourGuideService.tracker.stopTracking();
 		assertTrue(userRewards.size() == 1);
