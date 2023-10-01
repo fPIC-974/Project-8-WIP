@@ -33,6 +33,14 @@ public class TestRewardsService {
 		Attraction attraction = gpsUtil.getAttractions().get(0);
 		user.addToVisitedLocations(new VisitedLocation(user.getUserId(), attraction, new Date()));
 		tourGuideService.trackUserLocation(user);
+
+		// Wait until all threads in ExecutorService are completed
+		while (true) {
+			if (tourGuideService.isExecutorEmpty()) {
+				break;
+			}
+		}
+
 		List<UserReward> userRewards = user.getUserRewards();
 		tourGuideService.tracker.stopTracking();
 		assertTrue(userRewards.size() == 1);
